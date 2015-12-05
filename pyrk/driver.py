@@ -165,7 +165,7 @@ def solve(si, y, infile):
            and n.t < si.timer.tf.magnitude
            and th.t < si.timer.tf.magnitude):
         si.timer.advance_one_timestep()
-        si.db.record_all()
+        #si.db.record_all()
         n.integrate(si.timer.current_time().magnitude)
         update_n(n.t, n.y, si)
         th.integrate(si.timer.current_time().magnitude)
@@ -228,8 +228,9 @@ def main(args, curr_dir):
                           infile=args.infile,
                           db=out_db)
     print_logo(curr_dir)
-    sol = solve(si=si, y=si.y, infile=infile)
+    solve(si=si, y=si.y, infile=infile)
     log_results(si)
+    si.record_y()
     out_db.close_db()
     pyrklog.critical("\nSimulation succeeded.\n")
 

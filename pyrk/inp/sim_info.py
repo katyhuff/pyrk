@@ -1,5 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE
 import numpy as np
+import tables as tb
 
 from timer import Timer
 import neutronics
@@ -80,7 +81,7 @@ class SimInfo(object):
         self.db.register_recorder('metadata', 'sim_info', self.metadata,
                                   timeseries=False)
         self.db.register_recorder('metadata', 'sim_timeseries', self.record,
-                                timeseries=True)
+                                  timeseries=True)
         self.db.register_recorder('neutronics', 'neutronics_params',
                                   self.ne.record,
                                   timeseries=True)
@@ -208,3 +209,31 @@ class SimInfo(object):
         rec = {'t_idx': t_idx,
                'power': power}
         return rec
+
+    def y_table_dict(self):
+        y_table_dict = {}
+        y_table_dict["t_idx"] = tb.Int64Col()
+        y_table_dict["power"] = tb.Float64Col()
+        for p in range(self.n_pg):
+            y_table_dict["pg"+str(p)] = tb.Float64Col()
+        for d in range(self.n_dg):
+            y_table_dict["dg"+str(d)] = tb.Float64Col()
+        for c in self.components:
+            y_table_dict[c.name+"_temp"] = tb.Float64Col()
+        return y_table_dict
+
+    def y_table_array(self):
+        (rows, cols) = self.y.shape
+        y_table = np.zeros(shape=(rows, cols+1))
+        y_table[:, 1:] = self.y
+        t_idx_series = self.timer.series.magnitude
+        y_table[:, :1] = t_idx_series.reshape((rows, 1))
+        return y_table
+
+    def record_y(self):
+        y_table = self.db.h5file.create_table(self.db.h5file.root,
+                                              'solution',
+                                              self.y_table_dict(),
+                                              'Solution')
+        y_table.append(self.y_table_array())
+        self.db.h5file.flush()
