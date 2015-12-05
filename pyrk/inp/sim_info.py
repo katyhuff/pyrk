@@ -25,7 +25,8 @@ class SimInfo(object):
                  plotdir='images',
                  infile=None,
                  sim_id=None,
-                 db=None):
+                 db=None,
+                 record_all=False):
         """This class holds information about a reactor kinetics simulation
 
         :param timer: the Timer object for the simulation
@@ -73,6 +74,9 @@ class SimInfo(object):
             self.db = db
         else:
             self.db = database.Database()
+
+        self.record_all = bool(record_all)
+
         self.register_recorders()
 
     def register_recorders(self):

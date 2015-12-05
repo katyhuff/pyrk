@@ -165,7 +165,8 @@ def solve(si, y, infile):
            and n.t < si.timer.tf.magnitude
            and th.t < si.timer.tf.magnitude):
         si.timer.advance_one_timestep()
-        #si.db.record_all()
+        if si.record_all is True:
+            si.db.record_all()
         n.integrate(si.timer.current_time().magnitude)
         update_n(n.t, n.y, si)
         th.integrate(si.timer.current_time().magnitude)
@@ -226,7 +227,8 @@ def main(args, curr_dir):
                           rho_ext=infile.rho_ext,
                           plotdir=args.plotdir,
                           infile=args.infile,
-                          db=out_db)
+                          db=out_db,
+                          record_all=args.record_all)
     print_logo(curr_dir)
     solve(si=si, y=si.y, infile=infile)
     log_results(si)
@@ -249,5 +251,7 @@ if __name__ == "__main__":
         default='images')
     ap.add_argument('--outfile', help='the name of the output database',
                     default='pyrk.h5')
+    ap.add_argument('--record_all', help='True to write each timestep.',
+                    default='False')
     args = ap.parse_args()
     main(args, curr_dir)
