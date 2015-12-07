@@ -79,3 +79,11 @@ def test_sim_id():
     assert_false(first_id == next_id)
     info.db.close_db()
     info.db.delete_db()
+
+def test_record_y():
+    info = si.SimInfo()
+    info.record_y()
+    tab_str = info.db.h5file.root.solution.__str__()
+    assert_true('Solution' in tab_str)
+    info.db.close_db()
+    info.db.delete_db()
