@@ -1,5 +1,5 @@
 
-from setuptools import setup
+from setuptools import find_packages, setup
 import io
 import os
 
@@ -7,6 +7,8 @@ import pyrk
 #from version import get_git_version
 
 here = os.path.abspath(os.path.dirname(__file__))
+
+EXCLUDE_FROM_PACKAGES = ['pyrk.__pycache__']
 
 
 def read(*filenames, **kwargs):
@@ -30,7 +32,7 @@ setup(
     author_email='katyhuff@gmail.com',
     description='Transient Neutron Kinetics Simulation in 0D.',
     long_description=long_description,
-    packages=['pyrk','pyrk.utilities','pyrk.materials','pyrk.inp'],
+    packages=find_packages(exclude=EXCLUDE_FROM_PACKAGES),
     include_package_data=True,
     platforms='any',
     test_suite='pyrk.test.test_pyrk',
