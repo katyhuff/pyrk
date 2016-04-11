@@ -5,6 +5,7 @@ from utilities.ur import units
 from timer import Timer
 import math
 from materials.material import Material
+from convective_model import ConvectiveModel
 
 
 class THComponent(object):
@@ -166,7 +167,7 @@ class THComponent(object):
         :param timestep: the timestep at which to calculate reactivity feedback
         :type timestep: int
         :param T0_timestep: the timestep at which the temperature is used as
-        reference temperature
+          reference temperature
         :type T0_timestep: int
         '''
         assert timestep > self.timer.t_idx_feedback, "timestep that feedback\
@@ -184,12 +185,17 @@ class THComponent(object):
         :param area: heat transfer area
         :type area: float
         '''
+        if type(h) is not ConvectiveModel:
+            h = ConvectiveModel(h0=h)
         self.conv[env] = {
-            "h": h.to('joule/second/kelvin/meter**2'),
+            "h": h,
             "area": area
         }
 
     def add_mass_trans(self, env, H, u):
+
+        if type(H) is not ConvectiveModel:
+            H = ConvectiveModel(h0=H)
         self.mass[env] = {"H": H,
                           "u": u}
 
@@ -200,18 +206,21 @@ class THComponent(object):
         '''add convective boundary condition
 
         :param env: name of the environment for convective heat transfer
-        (the fluid)
+          (the fluid)
         :type env: str
         :param prev_comp: name of the component that is immediately inside the
-        boundary component
+          boundary component
         :type prev_comp: str
         :param h: convective heat transfer coefficient
-        :type h: float
+        :type h: float or obj of Convective Model
         :param R: radius of the sphere
         :type R: float
         '''
+        if type(h) is not ConvectiveModel:
+            h = ConvectiveModel(h0=h)
+
         self.convBC[env] = {
-            "h": h.to('joule/second/kelvin/meter**2'),
+            "h": h,
             "prev_comp": prev_comp,
             "R": R
         }
@@ -257,6 +266,37 @@ class THComponent(object):
             "cp": cp.to('joule/kg/kelvin')
         }
 
+    def metadata(self):
+        """A recorder function to fill the th/th_params table
+        """
+        rec = {'component': self.name,
+               'vol': self.vol.magnitude,
+               'matname': self.mat.name,
+               'k': self.k.magnitude,
+               'cp': self.cp.magnitude,
+               'T0': self.T0.magnitude,
+               'alpha_temp': self.alpha_temp.magnitude,
+               'heatgen': self.heatgen,
+               'power_tot': self.power_tot.magnitude
+               }
+        return rec
+
+    def record(self):
+        """A recorder function to fill the th/th_timeseries table
+        """
+        timestep = self.prev_t_idx
+        rec = {'t_idx': timestep,
+               'component': self.name,
+               'temp': self.temp(timestep).magnitude,
+               'density': self.rho(timestep).magnitude,
+               'k': self.k.magnitude,
+               'cp': self.cp.magnitude,
+               'alpha_temp': self.alpha_temp.magnitude,
+               'heatgen': self.heatgen,
+               'power_tot': self.power_tot.magnitude
+               }
+        return rec
+
 
 class THSuperComponent(THComponent):
 
@@ -296,18 +336,18 @@ class THSuperComponent(THComponent):
         self.add_conduction_in_mesh()
         self.alpha_temp = 0.0*units.delta_k/units.kelvin
 
-    def compute_tr(self, t_env, t_innercomp):
+    def compute_tr(self, t_env, t_innercomp, h):
         '''compute temperature at r=R for the sphere from the temperature at r=R-dr
         and the temperature of the env/fluid/coolant
 
         :param t_env: temperature of the component(env) that self tranfers
-        heat with
+          heat with
         :type t_env: float
         :param t_innercomp: temperature of the component that is inside self
         :type t_innercomp: float
         '''
-        for envname, d in six.iteritems(self.conv):
-            h = self.conv[envname]["h"].magnitude
+        for envname, d in self.conv.iteritems():
+            #h = self.conv[envname]["h"].h(env.rho(t_env)).magnitude
             k = self.conv[envname]["k"].magnitude
             dr = self.conv[envname]["dr"].magnitude
         return (-h/k*t_env+t_innercomp/dr)/(1/dr-h/k)
