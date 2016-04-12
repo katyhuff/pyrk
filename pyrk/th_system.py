@@ -128,30 +128,22 @@ class THSystem(object):
         to_ret = 0.0
         for interface, d in six.iteritems(component.conv):
             env = self.comp_from_name(interface)
+
             if isinstance(env, THSuperComponent):
-                Tr = env.compute_tr(component.T[t_idx].magnitude,
+                env_T = env.compute_tr(component.T[t_idx].magnitude,
                                     env.sub_comp[-2].T[t_idx].magnitude)
-                Qconv = self.convection(t_b=component.T[t_idx].magnitude,
-                                        t_env=Tr,
-                                        h=d['h'],
-                                        A=d['area'])
-                assert (Qconv*(component.T[t_idx].magnitude-Tr)) >= 0, '''
-                convection from %s to %s, from low temperature %f to
-                high temperature %f is not physical: %f''' % (
-                    component.name, env.name, component.T[t_idx].magnitude,
-                    Tr, Qconv.magnitude)
-            else:
-                Qconv = self.convection(t_b=component.T[t_idx].magnitude,
-                                        t_env=env.T[t_idx].magnitude,
-                                        h=d['h'],
-                                        A=d['area'])
-                assert (Qconv*(component.T[t_idx]-env.T[t_idx])).magnitude >= 0, \
-                    '''convection from %s to %s, from low temperature %f to
-                high temperature %f is not physical: %f''' % (
-                    component.name, env.name, component.T[t_idx].magnitude,
-                    env.T[t_idx].magnitude, Qconv.magnitude)
+            else :
+                env_T=env.T[t_idx].magnitude
+            Qconv = self.convection(t_b=component.T[t_idx].magnitude, 
+                                    t_env=env_T, 
+                                    h=d['h'], 
+                                    A=d['area'])
+            assert (Qconv*(component.T[t_idx]-env_T)) >= 0, \
+                '''convection from %s to %s, from low temperature %f to high 
+            temperature %f is not physical: %f''' % ( component.name, env.name, 
+                                                     component.T[t_idx].magnitude, env_T, Qconv.magnitude)
             to_ret = Qconv/cap/component.vol.magnitude
-        return to_ret
+            return to_ret
 
 
     def BC_center(self, component, t_idx):
