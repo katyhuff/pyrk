@@ -64,44 +64,8 @@ class THSystem(object):
                 to_ret -= QconvBC/cap
             if component.heatgen:
                 to_ret += self.heatgen(component, power, omegas)/cap
-            for interface, d in six.iteritems(component.cond):
-                env = self.comp_from_name(interface)
-                if component.sph:
-                    Qcond = self.conductionFVM(component, env, t_idx)
-                else:
-                    Qcond = self.conduction_slab(component, env, t_idx,
-                                                 L=d["L"],
-                                                 A=d["area"])
-                to_ret -= Qcond/cap
-            for interface, d in six.iteritems(component.conv):
-                env = self.comp_from_name(interface)
-                if isinstance(env, THSuperComponent):
-                    Tr = env.compute_tr(component.T[t_idx].magnitude,
-                                        env.sub_comp[-2].T[t_idx].magnitude,
-                                        h=d['h'].h(component.rho(t_idx),
-                                                   component.mat.mu).magnitude)
-                    Qconv = self.convection(t_b=component.T[t_idx].magnitude,
-                                            t_env=Tr,
-                                            h=d['h'].h(component.rho(t_idx),
-                                                       component.mat.mu),
-                                            A=d['area'])
-                    assert (Qconv*(component.T[t_idx].magnitude-Tr)) >= 0, '''
-                    convection from %s to %s, from low temperature %f to
-                    high %f is not physical: %f''' % (
-                        component.name, env.name, component.T[t_idx].magnitude,
-                        Tr, Qconv.magnitude)
-                else:
-                    Qconv = self.convection(t_b=component.T[t_idx].magnitude,
-                                            t_env=env.T[t_idx].magnitude,
-                                            h=d['h'].h(component.rho(t_idx),
-                                                       component.mat.mu),
-                                            A=d['area'])
-                    assert (Qconv*(component.T[t_idx]-env.T[t_idx])).magnitude >= 0, \
-                        'convection from %s to %s, %fc to %fc is not physical' \
-                        % (component.name, env.name,
-                           component.T[t_idx].magnitude,
-                           env.T[t_idx].magnitude)
-                to_ret -= Qconv/cap/component.vol.magnitude
+            to_ret += self.conduction_all_interfaces(component, cap, t_idx)
+            to_ret += self.convection_all_interfaces(component, cap, t_idx)
             for name, d in six.iteritems(component.adv):
                 Qadv = self.advection(component,
                                       t_idx,
@@ -121,7 +85,7 @@ class THSystem(object):
                 Qcond = self.conduction_slab(component, env, t_idx,
                                              L=d["L"],
                                              A=d["area"])
-            to_ret = Qcond/cap
+            to_ret -= Qcond/cap
         return to_ret
 
     def convection_all_interfaces(self, component, cap, t_idx):
@@ -142,8 +106,8 @@ class THSystem(object):
                 '''convection from %s to %s, from low temperature %f to high 
             temperature %f is not physical: %f''' % ( component.name, env.name, 
                                                      component.T[t_idx].magnitude, env_T, Qconv.magnitude)
-            to_ret = Qconv/cap/component.vol.magnitude
-            return to_ret
+            to_ret -= Qconv/cap/component.vol.magnitude
+        return to_ret
 
 
     def BC_center(self, component, t_idx):
