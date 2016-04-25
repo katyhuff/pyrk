@@ -24,6 +24,7 @@ class DensityModel(object):
         """
         self.a = a
         self.b = b
+        self.c = c
 
         self.implemented = {'constant': self.constant,
                             'linear': self.linear}
@@ -66,3 +67,4 @@ class DensityModel(object):
         """
         ret = self.a + self.b*temp
         return ret.to(units.kg/pow(units.meter, 3))
+
