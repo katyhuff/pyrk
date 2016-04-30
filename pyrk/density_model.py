@@ -24,7 +24,6 @@ class DensityModel(object):
         """
         self.a = a
         self.b = b
-        self.c = c
 
         self.implemented = {'constant': self.constant,
                             'linear': self.linear}

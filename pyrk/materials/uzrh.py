@@ -19,22 +19,22 @@ class UZrH(Material):
                  name="uzrh",
                  x=1.6,
                  e=0.20,
-                 w_u=0.45*units.g/(units.cm, 3)):
+                 w_u=0.45):
         """Initalizes a material
 
         :param name: The name of the component (i.e., "fuel" or "cool")
         :type name: str.
         """
-        Material.__init__(self,
-                          name=name,
-                          k=self.thermal_conductivity(),
-                          cp=self.specific_heat_capacity(),
-                          dm=self.density())
         self.x = x
         self.e = e
         self.w_u = w_u
         self.mu = self.m_u(self.e)
         self.y = self.y(self.mu, w_u)
+        Material.__init__(self,
+                          name=name,
+                          k=self.thermal_conductivity(),
+                          cp=self.specific_heat_capacity(),
+                          dm=self.density())
 
     def thermal_conductivity(self):
         """UZrH thermal conductivity in [W/m-K]
@@ -65,7 +65,7 @@ class UZrH(Material):
         :param w_u: is the weight fraction of uranium
         :type w_u: float
         """
-        y = (91.2/mu)*(w_u/(1-w_u))
+        y = (91.2/mu)*(w_u)/(1 - w_u)
         return y
 
     def rho_ZrH(self,
@@ -89,7 +89,7 @@ class UZrH(Material):
 
         """
         rho_U0 = 19.9*units.g/pow(units.cm, 3)
-        denom = w_u/rho_U0 + (1-w_u)/self.rho_ZrH(self.x)
+        denom = w_u/rho_U0 + (1 - w_u)/self.rho_ZrH(self.x)
         rho = 1/denom
         return rho.to(units.kg/pow(units.m, 3))
 
