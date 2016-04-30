@@ -106,7 +106,11 @@ class Database(object):
         """
         self.open_db()
         for k, v in six.iteritems(row_dict):
-            table.row[k] = v
+            try:
+                table.row[k] = v
+            except TypeError as e:
+                err_info = "table = {0}, k = {1}, v = {2}".format(table, k, v)
+                raise type(e)(str(e) + err_info)
         table.row.append()
         table.flush()
 
